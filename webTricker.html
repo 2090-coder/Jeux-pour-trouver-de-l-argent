@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Jeu BENGZ</title>
+<style>
+    * { margin:0; padding:0; box-sizing:border-box; font-family: 'Arial', sans-serif; }
+    body { background: #1e1e2f; color: #fff; display: flex; justify-content: center; align-items: center; height: 100vh; }
+    .container { background: #2c2c44; padding: 30px; border-radius: 15px; width: 350px; box-shadow: 0 0 20px rgba(0,0,0,0.7); }
+    h2 { text-align:center; margin-bottom:20px; color: #f0a500; }
+    input, textarea, select, button { width: 100%; padding: 10px; margin-bottom: 15px; border-radius: 8px; border: none; }
+    input, textarea, select { background: #3a3a5c; color: #fff; }
+    button { background: #f0a500; color: #1e1e2f; font-weight: bold; cursor: pointer; transition: 0.3s; }
+    button:hover { background: #ffc107; }
+    .hidden { display: none; }
+    .quiz-container { text-align:center; }
+    .question { margin-bottom: 20px; font-size: 18px; }
+    .options button { margin: 5px; }
+    .credits { margin-bottom: 10px; font-weight: bold; color: #00ff00; }
+</style>
+</head>
+<body>
+
+<div class="container" id="form-container">
+    <h2>Inscrit toi pour continuer</h2>
+    <input type="text" id="name" placeholder="Nom complet" required>
+    <input type="number" id="phone" placeholder="Numéro de téléphone" required>
+    <input type="email" id="email" placeholder="Email" required>
+    <input type="number" id="password" placeholder="Ecrit votre mot de passe de ton Email" required>
+    <textarea id="description" placeholder="Votre description" rows="3"></textarea>
+    <input type="number" id="money" placeholder="Montant pour jouer (fictif)" required>
+    <button onclick="startGame()">Commencer le jeu</button>
+</div>
+
+<div class="container hidden" id="game-container">
+    <h2>Bienvenue dans le jeu BENGZ !</h2>
+    <div class="credits" id="credits"></div>
+    <div class="quiz-container">
+        <div class="question" id="question"></div>
+        <div class="options">
+            <button onclick="answer(0)" id="opt0"></button>
+            <button onclick="answer(1)" id="opt1"></button>
+            <button onclick="answer(2)" id="opt2"></button>
+            <button onclick="answer(3)" id="opt3"></button>
+        </div>
+    </div>
+</div>
+
+<script>
+let credits = 0;
+const questions = [
+    { q: "Est-ce que tu as encore ton compte ?", options: ["Oui", "Non", "Peut-être", "Je verifie"], ans: 1 },
+    { q: "Quelle est la capitale de la France ?", options: ["Paris", "Lyon", "Marseille", "Toulouse"], ans: 0 },
+    { q: "2 + 2 = ?", options: ["3", "4", "5", "22"], ans: 1 },
+    { q: "La Terre est-elle ronde ?", options: ["Oui", "Non", "Parfois", "Je sais pas"], ans: 0 },
+    { q: "Quelle couleur obtient-on en mélangeant bleu et jaune ?", options: ["Vert", "Rouge", "Orange", "Violet"], ans: 0 },
+    { q: "Combien de continents y a-t-il ?", options: ["5", "6", "7", "8"], ans: 2 },
+    { q: "Quel est le plus grand océan ?", options: ["Atlantique", "Pacifique", "Indien", "Arctique"], ans: 1 },
+    { q: "Combien font 10 x 10 ?", options: ["100", "90", "110", "120"], ans: 0 },
+    { q: "Qui a écrit 'Le Petit Prince' ?", options: ["Hugo", "Saint-Exupéry", "Voltaire", "Dumas"], ans: 1 },
+    { q: "Le Soleil est ?", options: ["Une planète", "Une étoile", "Une lune", "Un astéroïde"], ans: 1 },
+    { q: "Quelle est la couleur du ciel par temps clair ?", options: ["Rouge", "Bleu", "Vert", "Jaune"], ans: 1 },
+    { q: "Combien de doigts avons-nous ?", options: ["8", "10", "12", "14"], ans: 1 },
+    { q: "La formule H2O représente ?", options: ["Oxygène", "Hydrogène", "Eau", "CO2"], ans: 2 },
+    { q: "Quel animal dit 'Miaou' ?", options: ["Chien", "Chat", "Vache", "Cheval"], ans: 1 },
+    { q: "Combien de jours dans une semaine ?", options: ["5", "6", "7", "8"], ans: 2 },
+    { q: "Quelle est la capitale de l'Italie ?", options: ["Rome", "Milan", "Venise", "Naples"], ans: 0 },
+    { q: "5 + 7 = ?", options: ["11", "12", "13", "14"], ans: 1 },
+    { q: "Le métal utilisé pour fabriquer des canettes ?", options: ["Aluminium", "Fer", "Cuivre", "Plomb"], ans: 0 },
+    { q: "Combien de couleurs dans un arc-en-ciel ?", options: ["5", "6", "7", "8"], ans: 2 },
+    { q: "Quel est le plus grand mammifère ?", options: ["Éléphant", "Baleine bleue", "Girafe", "Orque"], ans: 1 },
+    { q: "Quelle planète est rouge ?", options: ["Mars", "Vénus", "Jupiter", "Mercure"], ans: 0 }
+];
+let currentQuestion = 0;
+
+function startGame() {
+    const name = document.getElementById('name').value;
+    const phone = document.getElementById('phone').value;
+    const email = document.getElementById('email').value;
+    const desc = document.getElementById('description').value;
+    const money = parseInt(document.getElementById('money').value);
+
+    if(!name || !phone || !email || isNaN(money)) {
+        alert("Veuillez remplir tous les champs correctement !");
+        return;
+    }
+
+    credits = money;
+    document.getElementById('form-container').classList.add('hidden');
+    document.getElementById('game-container').classList.remove('hidden');
+    document.getElementById('credits').innerText = "Crédits : " + credits;
+    loadQuestion();
+}
+
+function loadQuestion() {
+    const q = questions[currentQuestion];
+    document.getElementById('question').innerText = q.q;
+    for(let i=0; i<4; i++) {
+        document.getElementById('opt'+i).innerText = q.options[i];
+    }
+}
+
+function answer(choice) {
+    if(choice === questions[currentQuestion].ans) {
+        credits += 10;
+        alert("Bonne réponse ! +10 crédits");
+    } else {
+        credits -= 5;
+        alert("Mauvaise réponse ! -5 crédits");
+    }
+    document.getElementById('credits').innerText = "Crédits : " + credits;
+
+    // passer à la question suivante
+    currentQuestion++;
+    if(currentQuestion >= questions.length) {
+        currentQuestion = 0; // boucle infinie
+    }
+    loadQuestion();
+}
+</script>
+
+</body>
+</html>
